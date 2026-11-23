@@ -44,7 +44,15 @@ function ui(){
   placeButton.disabled=!ready||!!journey||poemReader.isOpen();
   stick.hidden=place!=='street'||!!journey||!(touch.matches||innerWidth<700);
 }
-function resetStick(){thumb.set(0,0);stick.firstElementChild.style.transform='none'}
+let moveFinger=null,lookFinger=null;
+function resetStick(){
+  thumb.set(0,0);
+  stick.firstElementChild.style.transform='';
+  stick.style.removeProperty('--stick-left');stick.style.removeProperty('--stick-top');
+}
+function clearControls(){
+  held.clear();moveFinger=lookFinger=null;resetStick();
+}
 function seatView(){
   camera.position.copy(cafe.seat);camera.lookAt(cafe.focus);
   camera.rotation.reorder('YXZ');yaw=camera.rotation.y;pitch=camera.rotation.x;
@@ -65,15 +73,19 @@ function updateMarkers(){
 }
 function cup(){if(ready&&place==='cafe'&&!journey&&!cafe.browsing()&&cafe.coffee.available())cafe.coffee.start()}
 function book(){if(ready&&place==='cafe'&&!journey&&!cafe.browsing())cafe.readBook()}
-markers[0].onclick=cup;markers[1].onclick=book;
-markers[2].onclick=()=>travel();placeButton.onclick=()=>travel();
+const markActions=[cup,book,travel];
+markers.forEach((button,i)=>{
+  // Pointer taps are resolved after the gesture. Keyboard/assistive clicks activate the button directly.
+  button.onclick=e=>{if(e.detail===0)markActions[i]()};
+});
+placeButton.onclick=travel;
 
 const pathPoints=()=>[cafe.seat.clone(),cafePoint(1.69,1.67,-1.77),cafePoint(.50,1.66,-1.68),
   cafePoint(.04,1.65,-.90),cafePoint(.03,1.65,.30),outside.clone()];
 const shortest=(from,to)=>Math.atan2(Math.sin(to-from),Math.cos(to-from));
 function travel(){
   if(!ready||journey||poemReader.isOpen())return;
-  startAudio();held.clear();resetStick();
+  startAudio();clearControls();
   const outbound=place==='cafe',stops=pathPoints(),far=!outbound&&camera.position.distanceToSquared(outside)>2.3**2;
   if(outbound)cafe.leave();
   else{stops.reverse();if(!far)stops[0]=camera.position.clone()}
@@ -103,7 +115,7 @@ function travelFrame(dt){
   doorOpen=j.outbound?sstep(.16,.58,u)*(1-sstep(.86,1,u)):sstep(0,.11,u)*(1-sstep(.50,.80,u));
   if(u<1)return;
   place=j.outbound?'street':'cafe';journey=null;doorOpen=0;$('shade').style.opacity='0';
-  if(place==='cafe'){cafe.enter();seatView()}else{yaw=j.yawEnd;pitch=j.pitchEnd;say(stick.hidden&&!(touch.matches||innerWidth<700)?'WASD 或方向键移动 · 拖动环顾':'左侧摇杆移动 · 拖动环顾')}
+  if(place==='cafe'){cafe.enter();seatView()}else{yaw=j.yawEnd;pitch=j.pitchEnd;say(stick.hidden&&!(touch.matches||innerWidth<700)?'WASD 或方向键移动 · 拖动环顾':'左下按住滑动行走 · 右侧滑动转向')}
   ui();
 }
 
@@ -128,15 +140,6 @@ function walk(dt){
   if(allowed(candidate.x,camera.position.z))camera.position.x=candidate.x;
   if(allowed(camera.position.x,candidate.z))camera.position.z=candidate.z;
 }
-let stickPointer=null;
-function steer(e){
-  const r=stick.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
-  thumb.set(x/31,y/31);if(thumb.length()>1)thumb.normalize();
-  stick.firstElementChild.style.transform='translate('+thumb.x*24+'px,'+thumb.y*24+'px)';
-}
-stick.onpointerdown=e=>{if(stickPointer!==null)return;stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);steer(e)};
-stick.onpointermove=e=>{if(e.pointerId===stickPointer)steer(e)};
-stick.onlostpointercapture=()=>{stickPointer=null;resetStick()};
 window.addEventListener('keydown',e=>{
   if(!ready||journey||poemReader.isOpen()||e.altKey||e.metaKey||e.ctrlKey)return;
   if(place==='street'&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].includes(e.code)){
@@ -147,25 +150,70 @@ window.addEventListener('keydown',e=>{
   }
 });
 window.addEventListener('keyup',e=>held.delete(e.code));
-window.addEventListener('blur',()=>{held.clear();resetStick()});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){held.clear();resetStick()}previous=0});
+window.addEventListener('blur',clearControls);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearControls();previous=0});
+window.addEventListener('resize',clearControls);
 
-let drag=null;
-canvas.onpointerdown=e=>{
-  if(!ready||journey||poemReader.isOpen()||drag||e.button!==0)return;
-  drag={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId);
-};
-canvas.onpointermove=e=>{
-  if(!drag||drag.id!==e.pointerId)return;
-  const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
-  if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>4)drag.moved=true;
-  const speed=3.75/Math.max(innerWidth,innerHeight);yaw+=dx*speed;pitch=clamp(pitch+dy*speed*.82,-.98,.92);
-  drag.lastX=e.clientX;drag.lastY=e.clientY;
-};
-canvas.onpointerup=e=>{
-  if(!drag||drag.id!==e.pointerId)return;
-  const tap=!drag.moved;drag=null;
-  if(!tap||journey||cafe.browsing())return;
+function steerStick(dx,dy){
+  const radius=38,deadZone=5,length=Math.hypot(dx,dy);
+  const visualScale=27/Math.max(radius,length);
+  // A small push gives a gentle walking speed. The circular limit also normalizes diagonals.
+  thumb.set(dx,dy).normalize().multiplyScalar(clamp((length-deadZone)/(radius-deadZone)));
+  stick.firstElementChild.style.transform='translate('+(dx*visualScale)+'px,'+(dy*visualScale)+'px)';
+}
+function beginPointer(e){
+  if(!ready||journey||poemReader.isOpen()||e.button!==0)return;
+  const isTouch=e.pointerType==='touch';
+  const movement=place==='street'&&(e.currentTarget===stick||(isTouch&&e.clientX<innerWidth*.5&&e.clientY>=innerHeight*.55));
+  const owner=movement?moveFinger:lookFinger;
+  if(owner){owner.tap=false;return}
+
+  const finger={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,tap:true,started:e.timeStamp,isTouch,marker:markers.indexOf(e.currentTarget)};
+  if(movement){
+    moveFinger=finger;
+    if(isTouch){
+      stick.hidden=false;
+      stick.style.setProperty('--stick-left',(finger.x-stick.offsetWidth/2)+'px');
+      stick.style.setProperty('--stick-top',(finger.y-stick.offsetHeight/2)+'px');
+    }else{
+      const r=stick.getBoundingClientRect();finger.x=r.left+r.width/2;finger.y=r.top+r.height/2;
+      steerStick(e.clientX-finger.x,e.clientY-finger.y);
+    }
+  }else lookFinger=finger;
+  if(moveFinger&&lookFinger){moveFinger.tap=false;lookFinger.tap=false}
+  // Window listeners still finish a contact if capture is unavailable or the original target is hidden.
+  try{e.currentTarget.setPointerCapture?.(e.pointerId)}catch{}
+}
+for(const surface of [canvas,stick,...markers])surface.addEventListener('pointerdown',beginPointer);
+window.addEventListener('pointermove',e=>{
+  if(moveFinger?.id===e.pointerId){
+    const dx=e.clientX-moveFinger.x,dy=e.clientY-moveFinger.y;
+    if(Math.hypot(dx,dy)>4)moveFinger.tap=false;
+    steerStick(dx,dy);return;
+  }
+  const finger=lookFinger;if(!finger||finger.id!==e.pointerId)return;
+  const dx=e.clientX-finger.lastX,dy=e.clientY-finger.lastY;
+  const distance=Math.hypot(e.clientX-finger.x,e.clientY-finger.y);
+  if(finger.isTouch&&finger.tap&&distance<=3)return;
+  if(distance>3)finger.tap=false;
+  if(finger.isTouch){
+    // A comfortable thumb stroke turns through a quarter circle in either phone orientation.
+    const quarterTurn=clamp(Math.min(innerWidth,innerHeight)*.38,115,205);
+    const gain=Math.PI/(2*quarterTurn);
+    yaw-=dx*gain;pitch=clamp(pitch+dy*gain*.58,-.98,.92);
+  }else{
+    const gain=3.75/Math.max(innerWidth,innerHeight);
+    yaw+=dx*gain;pitch=clamp(pitch+dy*gain*.82,-.98,.92);
+  }
+  finger.lastX=e.clientX;finger.lastY=e.clientY;
+});
+function endPointer(e){
+  let finger;
+  if(moveFinger?.id===e.pointerId){finger=moveFinger;moveFinger=null;resetStick()}
+  else if(lookFinger?.id===e.pointerId){finger=lookFinger;lookFinger=null}
+  if(!finger||e.type!=='pointerup'||!finger.tap||journey||cafe.browsing())return;
+  if(finger.isTouch&&e.timeStamp-finger.started>420)return;
+  if(finger.marker>=0){if(!markers[finger.marker].hidden)markActions[finger.marker]();return}
   ndc.set(2*e.clientX/innerWidth-1,1-2*e.clientY/innerHeight);ray.setFromCamera(ndc,camera);
   const objects=[cafe.doorHit];
   if(place==='cafe'&&cafe.coffee.available())objects.push(cafe.book,cafe.coffee.hit);
@@ -173,8 +221,8 @@ canvas.onpointerup=e=>{
   if(hit.object===cafe.doorHit){if(place==='cafe'||hit.distance<5.3)travel();return}
   let o=hit.object;while(o&&o!==cafe.book&&o!==cafe.coffee.hit)o=o.parent;
   if(o===cafe.book)book();else if(o===cafe.coffee.hit)cup();
-};
-canvas.onlostpointercapture=()=>{drag=null};
+}
+for(const event of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(event,endPointer);
 
 function frame(ms){
   const dt=previous?Math.min(.10,(ms-previous)/1000):0;previous=ms;clock+=dt;
