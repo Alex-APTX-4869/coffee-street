@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#23322e">
 <title>雪街书咖 · Books &amp; Coffee</title>
-<meta name="coffee-build" content="ddb7dd67d34dbd71">
+<meta name="coffee-build" content="316ee13db0d754dd">
 <script>// The downloaded single file also works without an origin or an update service.
 (() => {
   if (!/^https?:$/.test(location.protocol)) return;
@@ -1576,7 +1576,7 @@ window.addEventListener('pointermove',e=>{
     // A comfortable thumb stroke turns through a quarter circle in either phone orientation.
     const quarterTurn=clamp(Math.min(innerWidth,innerHeight)*.38,115,205);
     const gain=Math.PI/(2*quarterTurn);
-    yaw+=dx*gain;pitch=clamp(pitch+dy*gain*.58,-.98,.92);
+    yaw-=dx*gain;pitch=clamp(pitch-dy*gain*.58,-.98,.92);
   }else{
     const gain=3.75/Math.max(innerWidth,innerHeight);
     yaw+=dx*gain;pitch=clamp(pitch+dy*gain*.82,-.98,.92);

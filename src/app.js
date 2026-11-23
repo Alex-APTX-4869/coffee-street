@@ -200,7 +200,7 @@ window.addEventListener('pointermove',e=>{
     // A comfortable thumb stroke turns through a quarter circle in either phone orientation.
     const quarterTurn=clamp(Math.min(innerWidth,innerHeight)*.38,115,205);
     const gain=Math.PI/(2*quarterTurn);
-    yaw+=dx*gain;pitch=clamp(pitch+dy*gain*.58,-.98,.92);
+    yaw-=dx*gain;pitch=clamp(pitch-dy*gain*.58,-.98,.92);
   }else{
     const gain=3.75/Math.max(innerWidth,innerHeight);
     yaw+=dx*gain;pitch=clamp(pitch+dy*gain*.82,-.98,.92);
