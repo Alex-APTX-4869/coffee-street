@@ -1,5 +1,6 @@
 """Build a portable page using the bundled Three.js modules and audio."""
 import base64
+import hashlib
 import json
 from pathlib import Path
 
@@ -23,6 +24,7 @@ for path in sorted((root / "assets").glob("coffee-audio-*")):
 parts = ["imports.js", "geometry.js", "sound.js", "bookreader.js", "cafe.js", "street.js", "app.js"]
 page = (source / "page.html").read_text()
 slots = {
+    "update": (source / "update.js").read_text(),
     "styles": (source / "page.css").read_text() + "\n" + (source / "bookreader.css").read_text(),
     "libraries": json.dumps({"imports": imports}, separators=(",", ":")),
     "reader": (source / "bookreader.html").read_text(),
@@ -34,9 +36,13 @@ for key, value in slots.items():
     marker = "@@" + key + "@@"
     assert page.count(marker) == 1, marker
     page = page.replace(marker, value)
+assert page.count("@@build@@") == 1
+build_id = hashlib.sha256(page.encode("utf-8")).hexdigest()[:16]
+page = page.replace("@@build@@", build_id)
 out = root / "index.html"
 out.parent.mkdir(exist_ok=True)
 tmp = out.with_suffix(".tmp")
 tmp.write_text(page)
 tmp.replace(out)
-print(out, out.stat().st_size, "bytes")
+(root / "version.json").write_text(json.dumps({"build": build_id}) + "\n")
+print(out, out.stat().st_size, "bytes", build_id)
