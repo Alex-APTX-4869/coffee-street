@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#23322e">
+<title>雪街书咖 · Books &amp; Coffee</title>
+<style>@@styles@@</style>
+<script type="importmap">@@libraries@@</script>
+</head>
+<body data-place="cafe" data-travelling="false">
+<canvas id="view" aria-label="雪夜的伦敦咖啡书店，可拖动环顾" tabindex="0"></canvas>
+<div id="shade"></div>
+<nav id="tools" aria-label="场景操作">
+  <button id="placeToggle" class="control" type="button" disabled>去街上</button>
+  <button id="audioToggle" class="control" type="button" aria-label="开启音乐" title="开启音乐" disabled><span aria-hidden="true">♫</span></button>
+</nav>
+<button id="bookMark" class="mark" type="button" aria-label="翻开诗集" hidden>click</button>
+<button id="cupMark" class="mark" type="button" aria-label="喝一口咖啡" hidden>click</button>
+<button id="doorMark" class="mark" type="button" aria-label="推开店门" hidden>click</button>
+<div id="stick" hidden aria-label="在街道移动" role="group"><span></span></div>
+<p id="guide" aria-live="polite"></p>
+<div id="loading" role="status"><span id="stage">正在准备咖啡店</span><progress max="100" value="4"></progress></div>
+@@reader@@
+@@audio@@
+<!-- @@credits@@ -->
+<script type="module">@@code@@</script>
+</body>
+</html>

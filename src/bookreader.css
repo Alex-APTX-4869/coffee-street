@@ -1,0 +1,29 @@
+#poetryReader{position:fixed;inset:0;padding:0;border:0;background:none;color:#403629;max-width:calc(100vw - 22px);max-height:89dvh;overflow:visible;font-family:"Songti SC","Noto Serif SC",Georgia,serif}
+#poetryReader::backdrop{background:rgba(14,13,15,.64)}
+:where(#poetryReader) .boundBook{position:relative;isolation:isolate;display:grid;grid-template-columns:1fr 1fr;width:min(690px,calc(100vw - 32px));height:min(440px,77dvh);box-sizing:border-box;
+  padding:5px 7px 8px;background:#35483f;border:1px solid #68705a;border-radius:6px 9px 10px 6px;box-shadow:0 2px #20342d,0 20px 54px #070b09aa}
+:where(#poetryReader) .boundBook::before,:where(#poetryReader) .boundBook::after{content:"";position:absolute;z-index:-1;bottom:5px;top:12px;width:49%;border-radius:1px 4px 3px 2px;background:repeating-linear-gradient(0deg,#c2b79e 0px,#efe5ce 1px,#ede4d0 2px);box-shadow:0 1px 2px #30281a66}
+:where(#poetryReader) .boundBook::before{left:5px;transform:skewY(1.1deg)}:where(#poetryReader) .boundBook::after{right:5px;transform:skewY(-1.1deg)}
+:where(#poetryReader) .boundBook{--page-x:clamp(14px,3.5vw,33px);--page-y:clamp(22px,5.3vh,42px);perspective:1250px}
+:where(#poetryReader) .bookPaper{position:relative;box-sizing:border-box;min-width:0;min-height:0;margin:0;padding:var(--page-y) var(--page-x)}
+:where(#poetryReader) .bookPaper[data-side="left"]{border-radius:4px 1px 1px 4px;background:linear-gradient(93deg,#e7dfcb,#f4ecd9 5%,#f6efdf 72%,#e9dfc8 92%,#b9ac94 100%)}
+:where(#poetryReader) .bookPaper[data-side="right"]{border-radius:1px 3px 4px 2px;background:linear-gradient(90deg,#b9ad96,#ece2cd 5%,#f8f1e2 14%,#f4ecd9 94%,#e9ddc4)}
+:where(#poetryReader) .pageMatter{width:100%;height:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:center;min-height:0}
+:where(#poetryReader) .poemText{flex:none;margin:0;width:100%;box-sizing:border-box;white-space:pre-line;overflow-wrap:anywhere;line-break:strict;font-size:clamp(14px,2.25vw,18px);font-weight:400;line-height:1.88}
+:where(#poetryReader) .poemHeading{display:flex;flex:none;flex-direction:row-reverse;align-items:center;justify-content:center;gap:10px}
+:where(#poetryReader) .poemHeading h2,:where(#poetryReader) .poemHeading .poet{margin:0;writing-mode:vertical-rl;text-orientation:upright;font-weight:500}
+:where(#poetryReader) .poemHeading h2{font-size:clamp(23px,4.1vw,34px);letter-spacing:.20em;line-height:1.1}
+:where(#poetryReader) .poemHeading .poet{font-size:clamp(12px,1.8vw,15px);letter-spacing:.22em;color:#716855;margin-top:28px}
+:where(#poetryReader) .poemArt{align-self:center;flex:0 1 auto;min-height:0;color:#84765e;width:clamp(62px,13vw,114px);height:min(12vh,93px);margin-top:5px}
+#poetryReader button{font-family:inherit;color:inherit;background:transparent;cursor:pointer;border:0}
+:where(#poetryReader) #poemClose{position:absolute;right:8px;top:6px;z-index:4;font:19px/1 Georgia,serif;color:#80755e;width:34px;height:32px}
+:where(#poetryReader) .pageNumber{position:absolute;bottom:13px;color:#796f5d;font:italic 12px Georgia,serif;pointer-events:none}
+:where(#poetryReader) [data-side="left"]>.pageNumber{left:clamp(33px,6vw,47px)}:where(#poetryReader) [data-side="right"]>.pageNumber{right:clamp(33px,6vw,47px)}
+:where(#poetryReader) .folioTurn{position:absolute;bottom:8px;z-index:4;color:#796f5d;font:22px Georgia,serif;min-width:36px;min-height:32px}
+:where(#poetryReader) #poemPrev{left:7px}:where(#poetryReader) #poemNext{right:7px}:where(#poetryReader) .folioTurn:disabled{visibility:hidden}
+:where(#poetryReader) .poemRuler{position:absolute;visibility:hidden;pointer-events:none;top:0;left:0;z-index:-1}
+:where(#poetryReader) .flippingLeaf{position:absolute;z-index:3;pointer-events:none;transform-style:preserve-3d}
+:where(#poetryReader) .flippingLeaf>.bookPaper{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 1px 4px #392b192b}
+:where(#poetryReader) .flippingLeaf>.bookPaper+ .bookPaper{transform:rotateY(180deg)}
+@media(max-width:540px){:where(#poetryReader) .boundBook{width:calc(100vw - 25px);height:min(370px,65dvh);--page-x:clamp(11px,3.3vw,17px)}:where(#poetryReader) .poemText{font-size:clamp(13px,3.65vw,17px);line-height:1.8}}
+@media(max-height:440px){:where(#poetryReader) .boundBook{height:80dvh;--page-y:clamp(18px,8vh,29px)}:where(#poetryReader) .poemArt{height:min(9vh,46px)}:where(#poetryReader) .poemHeading h2{font-size:clamp(19px,6vh,25px)}:where(#poetryReader) .pageNumber{bottom:8px}:where(#poetryReader) .folioTurn{bottom:1px}}
